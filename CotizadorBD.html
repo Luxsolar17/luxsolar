@@ -82,11 +82,9 @@ table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:6px 8px;
     <img src="logo nuevo.webp" alt="Luxsolar" style="height:50px;margin-bottom:12px;" onerror="this.style.display='none'">
     <h2>Acceso al Cotizador</h2>
     <p>Ingresa tus credenciales para acceder a la base de datos en la nube.</p>
-    <form onsubmit="event.preventDefault(); login();">
-      <input type="text" id="login-email" placeholder="Correo electrónico o Usuario" required>
-      <input type="password" id="login-pass" placeholder="Contraseña" required>
-      <button type="submit">Iniciar Sesión</button>
-    </form>
+    <input type="text" id="login-email" placeholder="Correo electrónico o Usuario">
+    <input type="password" id="login-pass" placeholder="Contraseña">
+    <button type="button" id="btn-login">Iniciar Sesión</button>
   </div>
 </div>
 
@@ -224,9 +222,11 @@ const SUPABASE_KEY = "sb_publishable_1gGKb8X7fdjiUENMNKK4jA_MLrgxO47";
 let supabase;
 
 try {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  if (window.supabase) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
 } catch (e) {
-  console.error("Error al inicializar Supabase:", e);
+  console.error("Error cargando Supabase:", e);
 }
 
 let CATALOG = [];
@@ -240,20 +240,20 @@ const today = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-// LOGIN / SESIÓN
-async function login() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass = document.getElementById('login-pass').value.trim();
-  
-  if(!email || !pass) {
+// LOGIN DIRECTO POR BOTÓN
+document.getElementById('btn-login').addEventListener('click', async function() {
+  const u = document.getElementById('login-email').value.trim();
+  const p = document.getElementById('login-pass').value.trim();
+
+  if(!u || !p) {
     alert('Ingresa usuario y contraseña.');
     return;
   }
-  
+
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'block';
   await initApp();
-}
+});
 
 function logout() {
   document.getElementById('app-screen').style.display = 'none';

@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Luxsolar — Cotizador Nube</title>
+<!-- Librería oficial de Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#17202a;--muted:#68737d;--line:#dfe4e8;--brand:#f5a623;--brand2:#1d4d6d;--ok:#18864b;--danger:#b42318}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+
+header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100}.top{max-width:1250px;margin:auto;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.brand{display:flex;align-items:center;gap:12px}.logo-img-top{height:42px;width:auto;object-fit:contain}
+nav{display:flex;gap:6px;flex-wrap:wrap}button,.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px}button.primary{background:var(--brand2);color:white;border-color:var(--brand2)}button.danger{color:var(--danger)}button.success{background:var(--ok);color:white;border-color:var(--ok)}
+main{max-width:1250px;margin:16px auto;padding:0 18px}.page{display:none}.page.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px #1522380a}
+h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 10px;color:var(--brand2)}.muted{color:var(--muted)}
+
+.grid-client{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 12px}
+.field-compact{display:flex;flex-direction:column;gap:3px}
+.field-compact label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase}
+.field-compact input,.field-compact select{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:13px}
+
+.tablewrap{overflow:visible}
+.table-container{overflow-x:auto;position:relative}
+table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{background:#f8fafb;color:#58636d}td.num{text-align:right;white-space:nowrap}.actions{display:flex;gap:6px;flex-wrap:wrap}
+.line-search{position:relative}
+.suggestions{position:absolute;left:0;right:0;top:100%;background:#fff;border:1px solid var(--brand2);border-radius:6px;z-index:999;max-height:220px;overflow-y:auto;box-shadow:0 4px 15px rgba(0,0,0,0.15)}
+.suggestions div{padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--line)}
+.suggestions div:hover{background:#f0f7fc}
+
+.switch{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:12px}.switch input{accent-color:var(--brand2)}
+
+.totals-compact{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;background:#f8fafb;padding:10px 14px;border-radius:8px;border:1px solid var(--line)}
+.totals-grid{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.tot-item{display:flex;flex-direction:column;align-items:flex-end}
+.tot-item span{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase}
+.tot-item b{font-size:14px;color:var(--ink)}
+.tot-item.grand b{font-size:18px;color:var(--brand2);font-weight:800}
+
+.search{max-width:380px}.empty{padding:25px;text-align:center;color:var(--muted)}
+.edit-inp{width:100%;padding:5px 7px;border:1px solid var(--line);border-radius:6px;font-size:12px}
+.new-row{background:#f0f7fc}
+.header-logo-doc{max-height:65px;width:auto;object-fit:contain}
+
+@media(max-width:900px){.grid-client{grid-template-columns:repeat(2,1fr)}.totals-compact{flex-direction:column;align-items:stretch}.totals-grid{justify-content:space-between}}
+@media(max-width:520px){.grid-client{grid-template-columns:1fr}main{padding:0 8px;margin:10px auto}.card{padding:10px}}
+
+@media print{
+  body{background:white}
+  .no-print,header{display:none!important}
+  .card{box-shadow:none;border:0;padding:4px 0;margin-bottom:6px}
+  .print-page{display:block!important}
+  main{margin:0;padding:0}
+  .page{display:none}
+  .page.active{display:block}
+  .grid-client{display:grid !important;grid-template-columns: repeat(3, 1fr) !important;gap: 6px 10px !important;}
+  .field-compact label{ font-size: 10px; }
+  .field-compact input{ padding: 4px 6px; font-size: 11px; border: 1px solid #ccc; }
+  table{min-width:0;font-size:9px}
+  th,td{padding:3px 4px}
+  .print-hide{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="no-print"><div class="top">
+<div class="brand">
+  <img src="logo nuevo.webp" alt="Luxsolar" class="logo-img-top" onerror="this.style.display='none'">
+  <div><small style="font-weight:700;color:var(--brand2);">Cotizador Nube Luxsolar</small></div>
+</div>
+<nav>
+  <button onclick="showPage('quote')">Cotización actual</button>
+  <button onclick="showPage('history')">Historial</button>
+  <button onclick="showPage('catalog')">Catálogo</button>
+</nav>
+</div></header>
+
+<main>
+<section id="quote" class="page active">
+<div class="card header-card">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div>
+      <img src="logo nuevo.webp" alt="Luxsolar SpA" class="header-logo-doc" onerror="this.style.display='none'">
+    </div>
+    <div style="text-align: right;" class="company-details">
+      <b style="font-size: 15px; color: var(--brand2);">LUXSOLAR SPA · 76.911.885-3</b><br>
+      <span style="font-size: 12px; color: var(--muted);">www.luxsolar.cl · contactoluxsolar@gmail.com</span><br>
+      <span style="font-size: 12px; color: var(--muted);">Teléfono: +56 9 4845 3721 · La Cisterna, Santiago</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin-bottom:6px;">Datos de la Cotización y Cliente</h2>
+  <div class="grid-client">
+    <div class="field-compact"><label>N° Cotización</label><input id="qnum"></div>
+    <div class="field-compact"><label>Fecha</label><input id="qdate" type="date"></div>
+    <div class="field-compact"><label>Válido Hasta</label><input id="validUntil" type="date"></div>
+    <div class="field-compact"><label>Asesor</label><input id="advisor" value="JULIO MARTINEZ"></div>
+    <div class="field-compact"><label>Cliente / Razón Social</label><input id="client" placeholder="Nombre completo o empresa"></div>
+    <div class="field-compact"><label>RUT Cliente</label><input id="clientId" placeholder="12.345.678-K"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
+    <h2 style="margin:0">Detalle de Productos / Servicios</h2>
+    <button class="primary no-print" onclick="addLine()">+ Agregar Producto</button>
+  </div>
+  <div class="tablewrap">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40%">Producto / Servicio</th>
+            <th>Código</th>
+            <th style="width:70px">Cant.</th>
+            <th style="width:110px">Precio Neto</th>
+            <th style="width:90px">IVA</th>
+            <th style="width:110px" class="num">Total Línea</th>
+            <th style="width:40px" class="no-print"></th>
+          </tr>
+        </thead>
+        <tbody id="lines"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="totals-compact">
+    <div class="actions no-print">
+      <button onclick="clearQuote()">Nueva cotización</button>
+      <button onclick="saveQuote()">Guardar en Nube</button>
+      <button class="primary" onclick="printQuote()">Exportar PDF / Imprimir</button>
+    </div>
+    <div class="totals-grid">
+      <div class="tot-item"><span>Neto Afecto</span><b id="taxable">$0</b></div>
+      <div class="tot-item"><span>Neto Exento</span><b id="exempt">$0</b></div>
+      <div class="tot-item"><span>IVA (19%)</span><b id="vat">$0</b></div>
+      <div class="tot-item grand"><span>TOTAL CLP</span><b id="grand">$0</b></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="history" class="page">
+<div class="card">
+  <h1>Historial de Cotizaciones (Nube)</h1>
+  <p class="muted">Sincronizado en tiempo real con Supabase.</p>
+  <div class="actions"><input class="search" id="histSearch" placeholder="Buscar por número o cliente" oninput="renderHistory()"><button onclick="fetchHistoryFromCloud()">🔄 Recargar Nube</button></div>
+</div>
+<div class="card tablewrap"><div class="table-container"><table><thead><tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Total</th><th style="width:120px;">Acciones</th></tr></thead><tbody id="historyRows"></tbody></table></div></div>
+</section>
+
+<section id="catalog" class="page">
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <div>
+      <h1>Catálogo General en la Nube</h1>
+      <p class="muted">Los cambios guardados aquí se actualizarán para todos los dispositivos.</p>
+    </div>
+    <div class="actions">
+      <button onclick="fetchCatalogFromCloud()">🔄 Recargar Catálogo</button>
+    </div>
+  </div>
+  <div class="actions" style="margin-top:10px;"><input class="search" id="catSearch" placeholder="Buscar por código, categoría o descripción..." oninput="renderCatalog()"></div>
+</div>
+<div class="card tablewrap">
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:120px;">Código</th>
+          <th style="width:160px;">Categoría</th>
+          <th>Descripción</th>
+          <th style="width:140px;">Precio Neto (CLP)</th>
+          <th style="width:100px;">Afecto IVA</th>
+          <th style="width:130px;" class="no-print">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="catalogRows"></tbody>
+    </table>
+  </div>
+</div>
+</section>
+</main>
+
+<script>
+// CONEXIÓN A SUPABASE
+const SUPABASE_URL = "https://tltrcrvobqkwftooipia.supabase.co";
+const SUPABASE_KEY = "sb_publishable_1gGKb8X7fdjiUENMNKK4jA_MLrgxO47";
+let supabase;
+
+try {
+  if (window.supabase) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+} catch (e) {
+  console.error("Error cargando Supabase:", e);
+}
+
+let CATALOG = [];
+let QUOTES_HISTORY = [];
+let lines = [];
+
+const money = n => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(Number(n) || 0);
+
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// INICIALIZACIÓN AUTOMÁTICA AL CARGAR
+window.addEventListener('DOMContentLoaded', async () => {
+  await initApp();
+});
+
+async function initApp() {
+  await fetchCatalogFromCloud();
+  await fetchHistoryFromCloud();
+  document.getElementById('qdate').value = today();
+  document.getElementById('qnum').value = nextNum();
+  document.getElementById('validUntil').value = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
+  if(!lines.length) addLine();
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'history') renderHistory();
+  if (id === 'catalog') renderCatalog();
+}
+
+function nextNum() {
+  return String(222 + QUOTES_HISTORY.length).padStart(3, '0');
+}
+
+// CATÁLOGO SUPABASE
+async function fetchCatalogFromCloud() {
+  if(!supabase) return;
+  let { data, error } = await supabase.from('catalogo').select('*').order('id', { ascending: true });
+  if (!error && data) {
+    CATALOG = data;
+    renderCatalog();
+  }
+}
+
+// HISTORIAL SUPABASE
+async function fetchHistoryFromCloud() {
+  if(!supabase) return;
+  let { data, error } = await supabase.from('cotizaciones').select('*').order('created_at', { ascending: false });
+  if (!error && data) {
+    QUOTES_HISTORY = data;
+    renderHistory();
+  }
+}
+
+function addLine(item) {
+  lines.push({ item: item || null, qty: 1, price: item ? item.precio_neto : 0, iva: item ? !!item.iva : true });
+  renderLines();
+}
+
+function removeLine(i) {
+  lines.splice(i, 1);
+  renderLines();
+}
+
+function renderLines() {
+  const tb = document.getElementById('lines');
+  tb.innerHTML = '';
+  lines.forEach((l, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="line-search">
+      <input style="width:100%;padding:6px;border:1px solid #dfe4e8;border-radius:6px;font-size:13px" value="${l.item ? htmlEsc(l.item.descripcion) : ''}" placeholder="Escribe para buscar..." oninput="suggest(${i},this.value)" onblur="setTimeout(()=>closeSuggest(${i}),200)">
+      <div id="sug${i}" class="suggestions" style="display:none"></div>
+    </td>
+    <td>${l.item ? l.item.codigo : '—'}</td>
+    <td><input type="number" min="1" step="1" value="${l.qty}" style="width:60px;padding:5px" onchange="lines[${i}].qty=+this.value;calc()"></td>
+    <td><input type="number" min="0" value="${l.price}" style="width:100px;padding:5px" onchange="lines[${i}].price=+this.value;calc()"></td>
+    <td><label class="switch"><input type="checkbox" ${l.iva ? 'checked' : ''} onchange="lines[${i}].iva=this.checked;calc()"> Afecto</label></td>
+    <td class="num">${money(l.qty * l.price)}</td>
+    <td class="no-print"><button class="danger" onclick="removeLine(${i})">×</button></td>`;
+    tb.appendChild(tr);
+  });
+  calc();
+}
+
+function htmlEsc(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function suggest(i, val) {
+  const box = document.getElementById('sug' + i);
+  let q = val.toLowerCase().trim();
+  if (!q) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  let arr = CATALOG.filter(p => (p.descripcion + ' ' + p.codigo + ' ' + p.categoria).toLowerCase().includes(q)).slice(0, 8);
+  if(arr.length === 0){ box.style.display = 'none'; return; }
+  
+  box.style.display = 'block';
+  box.innerHTML = arr.map((p) => {
+    return `<div onclick='pick(${i}, "${p.codigo}")'><b>${htmlEsc(p.codigo)}</b> — ${htmlEsc(p.descripcion)}<br><small style="color:var(--muted)">${htmlEsc(p.categoria)} · ${money(p.precio_neto)}</small></div>`;
+  }).join('');
+}
+
+function closeSuggest(i) {
+  const box = document.getElementById('sug' + i);
+  if (box) box.style.display = 'none';
+}
+
+function pick(i, codigo) {
+  const p = CATALOG.find(x => x.codigo === codigo);
+  if (p) {
+    lines[i] = { item: p, qty: lines[i].qty || 1, price: p.precio_neto, iva: !!p.iva };
+    renderLines();
+  }
+}
+
+function calc() {
+  let a = 0, e = 0;
+  lines.forEach(l => {
+    let n = (+l.qty || 0) * (+l.price || 0);
+    l.iva ? a += n : e += n;
+  });
+  let vat = Math.round(a * 0.19);
+  let total = a + e + vat;
+  document.getElementById('taxable').textContent = money(a);
+  document.getElementById('exempt').textContent = money(e);
+  document.getElementById('vat').textContent = money(vat);
+  document.getElementById('grand').textContent = money(total);
+  return { a, e, vat, total };
+}
+
+function getFormData() {
+  return {
+    num: document.getElementById('qnum').value,
+    date: document.getElementById('qdate').value,
+    client: document.getElementById('client').value,
+    client_id: document.getElementById('clientId').value,
+    advisor: document.getElementById('advisor').value,
+    valid_until: document.getElementById('validUntil').value,
+    lines,
+    totals: calc()
+  };
+}
+
+async function saveQuote() {
+  if(!supabase) return alert("Error de conexión con la base de datos.");
+  let d = getFormData();
+  const { error } = await supabase.from('cotizaciones').upsert(d, { onConflict: 'num' });
+  if (error) {
+    alert('Error al guardar en la nube: ' + error.message);
+  } else {
+    alert('Cotización guardada exitosamente en la nube.');
+    await fetchHistoryFromCloud();
+  }
+}
+
+function clearQuote() {
+  if (confirm('¿Crear una nueva cotización? Se limpiarán los datos actuales.')) {
+    lines = [];
+    document.getElementById('client').value = '';
+    document.getElementById('clientId').value = '';
+    document.getElementById('qnum').value = nextNum();
+    document.getElementById('qdate').value = today();
+    document.getElementById('validUntil').value = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
+    addLine();
+  }
+}
+
+async function printQuote() {
+  if (!lines.length) return alert('Agrega al menos un producto.');
+  await saveQuote();
+  window.print();
+}
+
+function renderHistory() {
+  let q = (document.getElementById('histSearch')?.value || '').toLowerCase();
+  let h = QUOTES_HISTORY.filter(x => (x.num + ' ' + x.client).toLowerCase().includes(q));
+  document.getElementById('historyRows').innerHTML = h.map(x => `<tr>
+    <td>${x.num}</td>
+    <td>${x.date || ''}</td>
+    <td>${htmlEsc(x.client || '')}</td>
+    <td>${money(x.totals?.total || 0)}</td>
+    <td class="actions">
+      <button onclick='loadQuote("${x.num}")'>Abrir</button>
+      <button class="danger" onclick='deleteQuote("${x.num}")' title="Eliminar cotización">×</button>
+    </td>
+  </tr>`).join('') || '<tr><td colspan="5" class="empty">No hay cotizaciones guardadas.</td></tr>';
+}
+
+function loadQuote(num) {
+  let x = QUOTES_HISTORY.find(q => q.num === num);
+  if (!x) return;
+  document.getElementById('qnum').value = x.num;
+  document.getElementById('qdate').value = x.date;
+  document.getElementById('client').value = x.client || '';
+  document.getElementById('clientId').value = x.client_id || '';
+  document.getElementById('advisor').value = x.advisor || '';
+  document.getElementById('validUntil').value = x.valid_until || '';
+  lines = x.lines || [];
+  showPage('quote');
+  renderLines();
+}
+
+async function deleteQuote(num) {
+  if (confirm(`¿Estás seguro de que deseas eliminar la cotización N° ${num} de la nube?`)) {
+    const { error } = await supabase.from('cotizaciones').delete().eq('num', num);
+    if (!error) {
+      await fetchHistoryFromCloud();
+    } else {
+      alert('Error al eliminar: ' + error.message);
+    }
+  }
+}
+
+function renderCatalog() {
+  let q = (document.getElementById('catSearch')?.value || '').toLowerCase();
+  let filtered = CATALOG.filter(p => (p.codigo + ' ' + p.categoria + ' ' + p.descripcion).toLowerCase().includes(q));
+
+  let html = `
+    <tr class="new-row no-print">
+      <td><input class="edit-inp" id="newCode" placeholder="Código"></td>
+      <td><input class="edit-inp" id="newCat" placeholder="Categoría"></td>
+      <td><input class="edit-inp" id="newDesc" placeholder="Descripción del producto"></td>
+      <td><input class="edit-inp" type="number" min="0" id="newPrice" placeholder="Precio CLP"></td>
+      <td>
+        <select class="edit-inp" id="newIva">
+          <option value="true">Sí</option>
+          <option value="false">No</option>
+        </select>
+      </td>
+      <td class="actions">
+        <button class="success" style="width:100%;" onclick="addNewProduct()">+ Añadir</button>
+      </td>
+    </tr>
+  `;
+
+  if (filtered.length === 0) {
+    html += '<tr><td colspan="6" class="empty">No se encontraron productos.</td></tr>';
+  } else {
+    filtered.forEach((p) => {
+      html += `
+        <tr>
+          <td><input class="edit-inp" id="c_code_${p.id}" value="${htmlEsc(p.codigo)}"></td>
+          <td><input class="edit-inp" id="c_cat_${p.id}" value="${htmlEsc(p.categoria)}"></td>
+          <td><input class="edit-inp" id="c_desc_${p.id}" value="${htmlEsc(p.descripcion)}"></td>
+          <td><input class="edit-inp" type="number" min="0" id="c_price_${p.id}" value="${p.precio_neto}"></td>
+          <td>
+            <select class="edit-inp" id="c_iva_${p.id}">
+              <option value="true" ${p.iva ? 'selected' : ''}>Sí</option>
+              <option value="false" ${!p.iva ? 'selected' : ''}>No</option>
+            </select>
+          </td>
+          <td class="no-print actions">
+            <button class="primary" onclick="updateProduct(${p.id})">Guardar</button>
+            <button class="danger" onclick="deleteProduct(${p.id})">×</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  document.getElementById('catalogRows').innerHTML = html;
+}
+
+async function updateProduct(id) {
+  let code = document.getElementById(`c_code_${id}`).value.trim();
+  let cat = document.getElementById(`c_cat_${id}`).value.trim();
+  let desc = document.getElementById(`c_desc_${id}`).value.trim();
+  let price = parseFloat(document.getElementById(`c_price_${id}`).value);
+  let iva = document.getElementById(`c_iva_${id}`).value === "true";
+
+  if (!code || !cat || !desc || isNaN(price)) return alert('Completa todos los campos.');
+
+  const { error } = await supabase.from('catalogo').update({ codigo: code, categoria: cat, descripcion: desc, precio_neto: price, iva: iva }).eq('id', id);
+  if (error) alert('Error: ' + error.message);
+  else {
+    alert('Producto actualizado en la nube.');
+    await fetchCatalogFromCloud();
+  }
+}
+
+async function addNewProduct() {
+  let code = document.getElementById('newCode').value.trim();
+  let cat = document.getElementById('newCat').value.trim();
+  let desc = document.getElementById('newDesc').value.trim();
+  let price = parseFloat(document.getElementById('newPrice').value);
+  let iva = document.getElementById('newIva').value === "true";
+
+  if (!code || !cat || !desc || isNaN(price)) return alert('Completa todos los campos para agregar.');
+
+  const { error } = await supabase.from('catalogo').insert([{ codigo: code, categoria: cat, descripcion: desc, precio_neto: price, iva: iva }]);
+  if (error) alert('Error: ' + error.message);
+  else {
+    alert('Producto agregado al catálogo en la nube.');
+    await fetchCatalogFromCloud();
+  }
+}
+
+async function deleteProduct(id) {
+  if (confirm('¿Eliminar este producto del catálogo en la nube?')) {
+    const { error } = await supabase.from('catalogo').delete().eq('id', id);
+    if (!error) await fetchCatalogFromCloud();
+    else alert('Error: ' + error.message);
+  }
+}
+</script>
+</body>
+</html>

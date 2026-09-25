@@ -72,9 +72,9 @@ table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:6px 8px;
   <div><small style="font-weight:700;color:var(--brand2);">Cotizador Nube Luxsolar</small></div>
 </div>
 <nav>
-  <button onclick="showPage('quote')">Cotización actual</button>
-  <button onclick="showPage('history')">Historial</button>
-  <button onclick="showPage('catalog')">Catálogo</button>
+  <button type="button" onclick="showPage('quote')">Cotización actual</button>
+  <button type="button" onclick="showPage('history')">Historial</button>
+  <button type="button" onclick="showPage('catalog')">Catálogo</button>
 </nav>
 </div></header>
 
@@ -108,7 +108,7 @@ table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:6px 8px;
 <div class="card">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
     <h2 style="margin:0">Detalle de Productos / Servicios</h2>
-    <button class="primary no-print" onclick="addLine()">+ Agregar Producto</button>
+    <button type="button" class="primary no-print" onclick="addLine()">+ Agregar Producto</button>
   </div>
   <div class="tablewrap">
     <div class="table-container">
@@ -133,9 +133,9 @@ table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:6px 8px;
 <div class="card">
   <div class="totals-compact">
     <div class="actions no-print">
-      <button onclick="clearQuote()">Nueva cotización</button>
-      <button onclick="saveQuote()">Guardar en Nube</button>
-      <button class="primary" onclick="printQuote()">Exportar PDF / Imprimir</button>
+      <button type="button" onclick="clearQuote()">Nueva cotización</button>
+      <button type="button" onclick="saveQuote()">Guardar en Nube</button>
+      <button type="button" class="primary" onclick="printQuote()">Exportar PDF / Imprimir</button>
     </div>
     <div class="totals-grid">
       <div class="tot-item"><span>Neto Afecto</span><b id="taxable">$0</b></div>
@@ -151,7 +151,7 @@ table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:6px 8px;
 <div class="card">
   <h1>Historial de Cotizaciones (Nube)</h1>
   <p class="muted">Sincronizado en tiempo real con Supabase.</p>
-  <div class="actions"><input class="search" id="histSearch" placeholder="Buscar por número o cliente" oninput="renderHistory()"><button onclick="fetchHistoryFromCloud()">🔄 Recargar Nube</button></div>
+  <div class="actions"><input class="search" id="histSearch" placeholder="Buscar por número o cliente" oninput="renderHistory()"><button type="button" onclick="fetchHistoryFromCloud()">🔄 Recargar Nube</button></div>
 </div>
 <div class="card tablewrap"><div class="table-container"><table><thead><tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Total</th><th style="width:120px;">Acciones</th></tr></thead><tbody id="historyRows"></tbody></table></div></div>
 </section>
@@ -164,7 +164,7 @@ table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:6px 8px;
       <p class="muted">Los cambios guardados aquí se actualizarán para todos los dispositivos.</p>
     </div>
     <div class="actions">
-      <button onclick="fetchCatalogFromCloud()">🔄 Recargar Catálogo</button>
+      <button type="button" onclick="fetchCatalogFromCloud()">🔄 Recargar Catálogo</button>
     </div>
   </div>
   <div class="actions" style="margin-top:10px;"><input class="search" id="catSearch" placeholder="Buscar por código, categoría o descripción..." oninput="renderCatalog()"></div>
@@ -190,18 +190,9 @@ table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:6px 8px;
 </main>
 
 <script>
-// CONEXIÓN A SUPABASE
 const SUPABASE_URL = "https://tltrcrvobqkwftooipia.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1gGKb8X7fdjiUENMNKK4jA_MLrgxO47";
-let supabase;
-
-try {
-  if (window.supabase) {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  }
-} catch (e) {
-  console.error("Error cargando Supabase:", e);
-}
+let supabase = null;
 
 let CATALOG = [];
 let QUOTES_HISTORY = [];
@@ -214,23 +205,30 @@ const today = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-// INICIALIZACIÓN AUTOMÁTICA AL CARGAR
-window.addEventListener('DOMContentLoaded', async () => {
-  await initApp();
-});
+window.onload = function() {
+  try {
+    if (window.supabase) {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+  } catch(e) {
+    console.log("Supabase error: " + e);
+  }
+  initApp();
+};
 
-async function initApp() {
-  await fetchCatalogFromCloud();
-  await fetchHistoryFromCloud();
-  document.getElementById('qdate').value = today();
-  document.getElementById('qnum').value = nextNum();
-  document.getElementById('validUntil').value = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
+function initApp() {
+  fetchCatalogFromCloud();
+  fetchHistoryFromCloud();
+  if(document.getElementById('qdate')) document.getElementById('qdate').value = today();
+  if(document.getElementById('qnum')) document.getElementById('qnum').value = nextNum();
+  if(document.getElementById('validUntil')) document.getElementById('validUntil').value = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
   if(!lines.length) addLine();
 }
 
 function showPage(id) {
   document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  var p = document.getElementById(id);
+  if(p) p.classList.add('active');
   if (id === 'history') renderHistory();
   if (id === 'catalog') renderCatalog();
 }
@@ -239,24 +237,26 @@ function nextNum() {
   return String(222 + QUOTES_HISTORY.length).padStart(3, '0');
 }
 
-// CATÁLOGO SUPABASE
 async function fetchCatalogFromCloud() {
   if(!supabase) return;
-  let { data, error } = await supabase.from('catalogo').select('*').order('id', { ascending: true });
-  if (!error && data) {
-    CATALOG = data;
-    renderCatalog();
-  }
+  try {
+    let { data, error } = await supabase.from('catalogo').select('*').order('id', { ascending: true });
+    if (!error && data) {
+      CATALOG = data;
+      renderCatalog();
+    }
+  } catch(e){}
 }
 
-// HISTORIAL SUPABASE
 async function fetchHistoryFromCloud() {
   if(!supabase) return;
-  let { data, error } = await supabase.from('cotizaciones').select('*').order('created_at', { ascending: false });
-  if (!error && data) {
-    QUOTES_HISTORY = data;
-    renderHistory();
-  }
+  try {
+    let { data, error } = await supabase.from('cotizaciones').select('*').order('created_at', { ascending: false });
+    if (!error && data) {
+      QUOTES_HISTORY = data;
+      renderHistory();
+    }
+  } catch(e){}
 }
 
 function addLine(item) {
@@ -271,6 +271,7 @@ function removeLine(i) {
 
 function renderLines() {
   const tb = document.getElementById('lines');
+  if(!tb) return;
   tb.innerHTML = '';
   lines.forEach((l, i) => {
     const tr = document.createElement('tr');
@@ -283,7 +284,7 @@ function renderLines() {
     <td><input type="number" min="0" value="${l.price}" style="width:100px;padding:5px" onchange="lines[${i}].price=+this.value;calc()"></td>
     <td><label class="switch"><input type="checkbox" ${l.iva ? 'checked' : ''} onchange="lines[${i}].iva=this.checked;calc()"> Afecto</label></td>
     <td class="num">${money(l.qty * l.price)}</td>
-    <td class="no-print"><button class="danger" onclick="removeLine(${i})">×</button></td>`;
+    <td class="no-print"><button type="button" class="danger" onclick="removeLine(${i})">×</button></td>`;
     tb.appendChild(tr);
   });
   calc();
@@ -327,10 +328,10 @@ function calc() {
   });
   let vat = Math.round(a * 0.19);
   let total = a + e + vat;
-  document.getElementById('taxable').textContent = money(a);
-  document.getElementById('exempt').textContent = money(e);
-  document.getElementById('vat').textContent = money(vat);
-  document.getElementById('grand').textContent = money(total);
+  if(document.getElementById('taxable')) document.getElementById('taxable').textContent = money(a);
+  if(document.getElementById('exempt')) document.getElementById('exempt').textContent = money(e);
+  if(document.getElementById('vat')) document.getElementById('vat').textContent = money(vat);
+  if(document.getElementById('grand')) document.getElementById('grand').textContent = money(total);
   return { a, e, vat, total };
 }
 
@@ -355,7 +356,7 @@ async function saveQuote() {
     alert('Error al guardar en la nube: ' + error.message);
   } else {
     alert('Cotización guardada exitosamente en la nube.');
-    await fetchHistoryFromCloud();
+    fetchHistoryFromCloud();
   }
 }
 
@@ -380,14 +381,16 @@ async function printQuote() {
 function renderHistory() {
   let q = (document.getElementById('histSearch')?.value || '').toLowerCase();
   let h = QUOTES_HISTORY.filter(x => (x.num + ' ' + x.client).toLowerCase().includes(q));
-  document.getElementById('historyRows').innerHTML = h.map(x => `<tr>
+  var el = document.getElementById('historyRows');
+  if(!el) return;
+  el.innerHTML = h.map(x => `<tr>
     <td>${x.num}</td>
     <td>${x.date || ''}</td>
     <td>${htmlEsc(x.client || '')}</td>
     <td>${money(x.totals?.total || 0)}</td>
     <td class="actions">
-      <button onclick='loadQuote("${x.num}")'>Abrir</button>
-      <button class="danger" onclick='deleteQuote("${x.num}")' title="Eliminar cotización">×</button>
+      <button type="button" onclick='loadQuote("${x.num}")'>Abrir</button>
+      <button type="button" class="danger" onclick='deleteQuote("${x.num}")' title="Eliminar cotización">×</button>
     </td>
   </tr>`).join('') || '<tr><td colspan="5" class="empty">No hay cotizaciones guardadas.</td></tr>';
 }
@@ -410,7 +413,7 @@ async function deleteQuote(num) {
   if (confirm(`¿Estás seguro de que deseas eliminar la cotización N° ${num} de la nube?`)) {
     const { error } = await supabase.from('cotizaciones').delete().eq('num', num);
     if (!error) {
-      await fetchHistoryFromCloud();
+      fetchHistoryFromCloud();
     } else {
       alert('Error al eliminar: ' + error.message);
     }
@@ -434,7 +437,7 @@ function renderCatalog() {
         </select>
       </td>
       <td class="actions">
-        <button class="success" style="width:100%;" onclick="addNewProduct()">+ Añadir</button>
+        <button type="button" class="success" style="width:100%;" onclick="addNewProduct()">+ Añadir</button>
       </td>
     </tr>
   `;
@@ -456,15 +459,16 @@ function renderCatalog() {
             </select>
           </td>
           <td class="no-print actions">
-            <button class="primary" onclick="updateProduct(${p.id})">Guardar</button>
-            <button class="danger" onclick="deleteProduct(${p.id})">×</button>
+            <button type="button" class="primary" onclick="updateProduct(${p.id})">Guardar</button>
+            <button type="button" class="danger" onclick="deleteProduct(${p.id})">×</button>
           </td>
         </tr>
       `;
     });
   }
 
-  document.getElementById('catalogRows').innerHTML = html;
+  var el = document.getElementById('catalogRows');
+  if(el) el.innerHTML = html;
 }
 
 async function updateProduct(id) {
@@ -480,7 +484,7 @@ async function updateProduct(id) {
   if (error) alert('Error: ' + error.message);
   else {
     alert('Producto actualizado en la nube.');
-    await fetchCatalogFromCloud();
+    fetchCatalogFromCloud();
   }
 }
 
@@ -497,14 +501,14 @@ async function addNewProduct() {
   if (error) alert('Error: ' + error.message);
   else {
     alert('Producto agregado al catálogo en la nube.');
-    await fetchCatalogFromCloud();
+    fetchCatalogFromCloud();
   }
 }
 
 async function deleteProduct(id) {
   if (confirm('¿Eliminar este producto del catálogo en la nube?')) {
     const { error } = await supabase.from('catalogo').delete().eq('id', id);
-    if (!error) await fetchCatalogFromCloud();
+    if (!error) fetchCatalogFromCloud();
     else alert('Error: ' + error.message);
   }
 }

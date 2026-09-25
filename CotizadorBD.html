@@ -190,29 +190,29 @@ table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:6px 8px;
 </main>
 
 <script>
-const SUPABASE_URL = "https://tltrcrvobqkwftooipia.supabase.co";
-const SUPABASE_KEY = "sb_publishable_1gGKb8X7fdjiUENMNKK4jA_MLrgxO47";
-let supabase = null;
+var SUPABASE_URL = "https://tltrcrvobqkwftooipia.supabase.co";
+var SUPABASE_KEY = "sb_publishable_1gGKb8X7fdjiUENMNKK4jA_MLrgxO47";
+var supabase = null;
 
-let CATALOG = [];
-let QUOTES_HISTORY = [];
-let lines = [];
+var CATALOG = [];
+var QUOTES_HISTORY = [];
+var lines = [];
 
-const money = n => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(Number(n) || 0);
+function money(n) {
+  return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(Number(n) || 0);
+}
 
-const today = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+function today() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
 
-// Iniciar interfaz inmediatamente sin esperar red
-window.addEventListener('DOMContentLoaded', () => {
-  if(document.getElementById('qdate')) document.getElementById('qdate').value = today();
-  if(document.getElementById('qnum')) document.getElementById('qnum').value = "222";
-  if(document.getElementById('validUntil')) document.getElementById('validUntil').value = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
-  if(!lines.length) addLine();
+window.addEventListener('DOMContentLoaded', function() {
+  if (document.getElementById('qdate')) document.getElementById('qdate').value = today();
+  if (document.getElementById('qnum')) document.getElementById('qnum').value = "222";
+  if (document.getElementById('validUntil')) document.getElementById('validUntil').value = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
+  if (!lines.length) addLine();
   
-  // Conectar Supabase en segundo plano
   setTimeout(initSupabase, 100);
 });
 
@@ -224,14 +224,17 @@ function initSupabase() {
       fetchHistoryFromCloud();
     }
   } catch(e) {
-    console.log("Supabase no inicializado:", e);
+    console.log("Supabase error:", e);
   }
 }
 
 function showPage(id) {
-  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  var pages = document.querySelectorAll('.page');
+  for (var i = 0; i < pages.length; i++) {
+    pages[i].classList.remove('active');
+  }
   var p = document.getElementById(id);
-  if(p) p.classList.add('active');
+  if (p) p.classList.add('active');
   if (id === 'history') renderHistory();
   if (id === 'catalog') renderCatalog();
 }
@@ -241,23 +244,23 @@ function nextNum() {
 }
 
 async function fetchCatalogFromCloud() {
-  if(!supabase) return;
+  if (!supabase) return;
   try {
-    let { data, error } = await supabase.from('catalogo').select('*').order('id', { ascending: true });
-    if (!error && data) {
-      CATALOG = data;
+    var res = await supabase.from('catalogo').select('*').order('id', { ascending: true });
+    if (!res.error && res.data) {
+      CATALOG = res.data;
       renderCatalog();
     }
   } catch(e){}
 }
 
 async function fetchHistoryFromCloud() {
-  if(!supabase) return;
+  if (!supabase) return;
   try {
-    let { data, error } = await supabase.from('cotizaciones').select('*').order('created_at', { ascending: false });
-    if (!error && data) {
-      QUOTES_HISTORY = data;
-      if(document.getElementById('qnum')) document.getElementById('qnum').value = nextNum();
+    var res = await supabase.from('cotizaciones').select('*').order('created_at', { ascending: false });
+    if (!res.error && res.data) {
+      QUOTES_HISTORY = res.data;
+      if (document.getElementById('qnum')) document.getElementById('qnum').value = nextNum();
       renderHistory();
     }
   } catch(e){}
@@ -274,51 +277,55 @@ function removeLine(i) {
 }
 
 function renderLines() {
-  const tb = document.getElementById('lines');
-  if(!tb) return;
+  var tb = document.getElementById('lines');
+  if (!tb) return;
   tb.innerHTML = '';
-  lines.forEach((l, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="line-search">
-      <input style="width:100%;padding:6px;border:1px solid #dfe4e8;border-radius:6px;font-size:13px" value="${l.item ? htmlEsc(l.item.descripcion) : ''}" placeholder="Escribe para buscar..." oninput="suggest(${i},this.value)" onblur="setTimeout(()=>closeSuggest(${i}),200)">
-      <div id="sug${i}" class="suggestions" style="display:none"></div>
-    </td>
-    <td>${l.item ? l.item.codigo : '—'}</td>
-    <td><input type="number" min="1" step="1" value="${l.qty}" style="width:60px;padding:5px" onchange="lines[${i}].qty=+this.value;calc()"></td>
-    <td><input type="number" min="0" value="${l.price}" style="width:100px;padding:5px" onchange="lines[${i}].price=+this.value;calc()"></td>
-    <td><label class="switch"><input type="checkbox" ${l.iva ? 'checked' : ''} onchange="lines[${i}].iva=this.checked;calc()"> Afecto</label></td>
-    <td class="num">${money(l.qty * l.price)}</td>
-    <td class="no-print"><button type="button" class="danger" onclick="removeLine(${i})">×</button></td>`;
+  lines.forEach(function(l, i) {
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td class="line-search">' +
+      '<input style="width:100%;padding:6px;border:1px solid #dfe4e8;border-radius:6px;font-size:13px" value="' + (l.item ? htmlEsc(l.item.descripcion) : '') + '" placeholder="Escribe para buscar..." oninput="suggest(' + i + ',this.value)" onblur="setTimeout(function(){closeSuggest(' + i + ')},200)">' +
+      '<div id="sug' + i + '" class="suggestions" style="display:none"></div>' +
+    '</td>' +
+    '<td>' + (l.item ? l.item.codigo : '—') + '</td>' +
+    '<td><input type="number" min="1" step="1" value="' + l.qty + '" style="width:60px;padding:5px" onchange="lines[' + i + '].qty=+this.value;calc()"></td>' +
+    '<td><input type="number" min="0" value="' + l.price + '" style="width:100px;padding:5px" onchange="lines[' + i + '].price=+this.value;calc()"></td>' +
+    '<td><label class="switch"><input type="checkbox" ' + (l.iva ? 'checked' : '') + ' onchange="lines[' + i + '].iva=this.checked;calc()"> Afecto</label></td>' +
+    '<td class="num">' + money(l.qty * l.price) + '</td>' +
+    '<td class="no-print"><button type="button" class="danger" onclick="removeLine(' + i + ')">×</button></td>';
     tb.appendChild(tr);
   });
   calc();
 }
 
 function htmlEsc(s) {
-  return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  return String(s || '').replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
 }
 
 function suggest(i, val) {
-  const box = document.getElementById('sug' + i);
-  if(!box) return;
-  let q = val.toLowerCase().trim();
+  var box = document.getElementById('sug' + i);
+  if (!box) return;
+  var q = val.toLowerCase().trim();
   if (!q) { box.style.display = 'none'; box.innerHTML = ''; return; }
-  let arr = CATALOG.filter(p => (p.descripcion + ' ' + p.codigo + ' ' + p.categoria).toLowerCase().includes(q)).slice(0, 8);
-  if(arr.length === 0){ box.style.display = 'none'; return; }
+  var arr = CATALOG.filter(function(p) {
+    return (p.descripcion + ' ' + p.codigo + ' ' + p.categoria).toLowerCase().indexOf(q) !== -1;
+  }).slice(0, 8);
+  if (arr.length === 0) { box.style.display = 'none'; return; }
   
   box.style.display = 'block';
-  box.innerHTML = arr.map((p) => {
-    return `<div onclick='pick(${i}, "${p.codigo}")'><b>${htmlEsc(p.codigo)}</b> — ${htmlEsc(p.descripcion)}<br><small style="color:var(--muted)">${htmlEsc(p.categoria)} · ${money(p.precio_neto)}</small></div>`;
+  box.innerHTML = arr.map(function(p) {
+    return '<div onclick=\'pick(' + i + ', "' + p.codigo + '")\'><b>' + htmlEsc(p.codigo) + '</b> — ' + htmlEsc(p.descripcion) + '<br><small style="color:var(--muted)">' + htmlEsc(p.categoria) + ' · ' + money(p.precio_neto) + '</small></div>';
   }).join('');
 }
 
 function closeSuggest(i) {
-  const box = document.getElementById('sug' + i);
+  var box = document.getElementById('sug' + i);
   if (box) box.style.display = 'none';
 }
 
 function pick(i, codigo) {
-  const p = CATALOG.find(x => x.codigo === codigo);
+  var p = CATALOG.find(function(x) { return x.codigo === codigo; });
   if (p) {
     lines[i] = { item: p, qty: lines[i].qty || 1, price: p.precio_neto, iva: !!p.iva };
     renderLines();
@@ -326,18 +333,18 @@ function pick(i, codigo) {
 }
 
 function calc() {
-  let a = 0, e = 0;
-  lines.forEach(l => {
-    let n = (+l.qty || 0) * (+l.price || 0);
-    l.iva ? a += n : e += n;
+  var a = 0, e = 0;
+  lines.forEach(function(l) {
+    var n = (+l.qty || 0) * (+l.price || 0);
+    if (l.iva) { a += n; } else { e += n; }
   });
-  let vat = Math.round(a * 0.19);
-  let total = a + e + vat;
-  if(document.getElementById('taxable')) document.getElementById('taxable').textContent = money(a);
-  if(document.getElementById('exempt')) document.getElementById('exempt').textContent = money(e);
-  if(document.getElementById('vat')) document.getElementById('vat').textContent = money(vat);
-  if(document.getElementById('grand')) document.getElementById('grand').textContent = money(total);
-  return { a, e, vat, total };
+  var vat = Math.round(a * 0.19);
+  var total = a + e + vat;
+  if (document.getElementById('taxable')) document.getElementById('taxable').textContent = money(a);
+  if (document.getElementById('exempt')) document.getElementById('exempt').textContent = money(e);
+  if (document.getElementById('vat')) document.getElementById('vat').textContent = money(vat);
+  if (document.getElementById('grand')) document.getElementById('grand').textContent = money(total);
+  return { a: a, e: e, vat: vat, total: total };
 }
 
 function getFormData() {
@@ -348,17 +355,17 @@ function getFormData() {
     client_id: document.getElementById('clientId').value,
     advisor: document.getElementById('advisor').value,
     valid_until: document.getElementById('validUntil').value,
-    lines,
+    lines: lines,
     totals: calc()
   };
 }
 
 async function saveQuote() {
-  if(!supabase) return alert("Guardando versión local (Conectando a nube...)");
-  let d = getFormData();
-  const { error } = await supabase.from('cotizaciones').upsert(d, { onConflict: 'num' });
-  if (error) {
-    alert('Error al guardar en la nube: ' + error.message);
+  if (!supabase) return alert("Conectando con la base de datos en la nube...");
+  var d = getFormData();
+  var res = await supabase.from('cotizaciones').upsert(d, { onConflict: 'num' });
+  if (res.error) {
+    alert('Error al guardar en la nube: ' + res.error.message);
   } else {
     alert('Cotización guardada exitosamente en la nube.');
     fetchHistoryFromCloud();
@@ -384,24 +391,28 @@ async function printQuote() {
 }
 
 function renderHistory() {
-  let q = (document.getElementById('histSearch')?.value || '').toLowerCase();
-  let h = QUOTES_HISTORY.filter(x => (x.num + ' ' + x.client).toLowerCase().includes(q));
+  var q = (document.getElementById('histSearch')?.value || '').toLowerCase();
+  var h = QUOTES_HISTORY.filter(function(x) {
+    return (x.num + ' ' + x.client).toLowerCase().indexOf(q) !== -1;
+  });
   var el = document.getElementById('historyRows');
-  if(!el) return;
-  el.innerHTML = h.map(x => `<tr>
-    <td>${x.num}</td>
-    <td>${x.date || ''}</td>
-    <td>${htmlEsc(x.client || '')}</td>
-    <td>${money(x.totals?.total || 0)}</td>
-    <td class="actions">
-      <button type="button" onclick='loadQuote("${x.num}")'>Abrir</button>
-      <button type="button" class="danger" onclick='deleteQuote("${x.num}")' title="Eliminar cotización">×</button>
-    </td>
-  </tr>`).join('') || '<tr><td colspan="5" class="empty">No hay cotizaciones guardadas.</td></tr>';
+  if (!el) return;
+  el.innerHTML = h.map(function(x) {
+    return '<tr>' +
+      '<td>' + x.num + '</td>' +
+      '<td>' + (x.date || '') + '</td>' +
+      '<td>' + htmlEsc(x.client || '') + '</td>' +
+      '<td>' + money(x.totals?.total || 0) + '</td>' +
+      '<td class="actions">' +
+        '<button type="button" onclick=\'loadQuote("' + x.num + '")\'>Abrir</button>' +
+        '<button type="button" class="danger" onclick=\'deleteQuote("' + x.num + '")\' title="Eliminar cotización">×</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="5" class="empty">No hay cotizaciones guardadas.</td></tr>';
 }
 
 function loadQuote(num) {
-  let x = QUOTES_HISTORY.find(q => q.num === num);
+  var x = QUOTES_HISTORY.find(function(q) { return q.num === num; });
   if (!x) return;
   document.getElementById('qnum').value = x.num;
   document.getElementById('qdate').value = x.date;
@@ -415,78 +426,78 @@ function loadQuote(num) {
 }
 
 async function deleteQuote(num) {
-  if (confirm(`¿Estás seguro de que deseas eliminar la cotización N° ${num} de la nube?`)) {
-    const { error } = await supabase.from('cotizaciones').delete().eq('num', num);
-    if (!error) {
+  if (confirm('¿Estás seguro de que deseas eliminar la cotización N° ' + num + ' de la nube?')) {
+    var res = await supabase.from('cotizaciones').delete().eq('num', num);
+    if (!res.error) {
       fetchHistoryFromCloud();
     } else {
-      alert('Error al eliminar: ' + error.message);
+      alert('Error al eliminar: ' + res.error.message);
     }
   }
 }
 
 function renderCatalog() {
-  let q = (document.getElementById('catSearch')?.value || '').toLowerCase();
-  let filtered = CATALOG.filter(p => (p.codigo + ' ' + p.categoria + ' ' + p.descripcion).toLowerCase().includes(q));
+  var q = (document.getElementById('catSearch')?.value || '').toLowerCase();
+  var filtered = CATALOG.filter(function(p) {
+    return (p.codigo + ' ' + p.categoria + ' ' + p.descripcion).toLowerCase().indexOf(q) !== -1;
+  });
 
-  let html = `
-    <tr class="new-row no-print">
-      <td><input class="edit-inp" id="newCode" placeholder="Código"></td>
-      <td><input class="edit-inp" id="newCat" placeholder="Categoría"></td>
-      <td><input class="edit-inp" id="newDesc" placeholder="Descripción del producto"></td>
-      <td><input class="edit-inp" type="number" min="0" id="newPrice" placeholder="Precio CLP"></td>
-      <td>
-        <select class="edit-inp" id="newIva">
-          <option value="true">Sí</option>
-          <option value="false">No</option>
-        </select>
-      </td>
-      <td class="actions">
-        <button type="button" class="success" style="width:100%;" onclick="addNewProduct()">+ Añadir</button>
-      </td>
-    </tr>
-  `;
+  var html = '' +
+    '<tr class="new-row no-print">' +
+      '<td><input class="edit-inp" id="newCode" placeholder="Código"></td>' +
+      '<td><input class="edit-inp" id="newCat" placeholder="Categoría"></td>' +
+      '<td><input class="edit-inp" id="newDesc" placeholder="Descripción del producto"></td>' +
+      '<td><input class="edit-inp" type="number" min="0" id="newPrice" placeholder="Precio CLP"></td>' +
+      '<td>' +
+        '<select class="edit-inp" id="newIva">' +
+          '<option value="true">Sí</option>' +
+          '<option value="false">No</option>' +
+        '</select>' +
+      '</td>' +
+      '<td class="actions">' +
+        '<button type="button" class="success" style="width:100%;" onclick="addNewProduct()">+ Añadir</button>' +
+      '</td>' +
+    '</tr>';
 
   if (filtered.length === 0) {
     html += '<tr><td colspan="6" class="empty">No se encontraron productos.</td></tr>';
   } else {
-    filtered.forEach((p) => {
-      html += `
-        <tr>
-          <td><input class="edit-inp" id="c_code_${p.id}" value="${htmlEsc(p.codigo)}"></td>
-          <td><input class="edit-inp" id="c_cat_${p.id}" value="${htmlEsc(p.categoria)}"></td>
-          <td><input class="edit-inp" id="c_desc_${p.id}" value="${htmlEsc(p.descripcion)}"></td>
-          <td><input class="edit-inp" type="number" min="0" id="c_price_${p.id}" value="${p.precio_neto}"></td>
-          <td>
-            <select class="edit-inp" id="c_iva_${p.id}">
-              <option value="true" ${p.iva ? 'selected' : ''}>Sí</option>
-              <option value="false" ${!p.iva ? 'selected' : ''}>No</option>
-            </select>
-          </td>
-          <td class="no-print actions">
-            <button type="button" class="primary" onclick="updateProduct(${p.id})">Guardar</button>
-            <button type="button" class="danger" onclick="deleteProduct(${p.id})">×</button>
-          </td>
-        </tr>
-      `;
+    filtered.forEach(function(p) {
+      html += '' +
+        '<tr>' +
+          '<td><input class="edit-inp" id="c_code_' + p.id + '" value="' + htmlEsc(p.codigo) + '"></td>' +
+          '<td><input class="edit-inp" id="c_cat_' + p.id + '" value="' + htmlEsc(p.categoria) + '"></td>' +
+          '<td><input class="edit-inp" id="c_desc_' + p.id + '" value="' + htmlEsc(p.descripcion) + '"></td>' +
+          '<td><input class="edit-inp" type="number" min="0" id="c_price_' + p.id + '" value="' + p.precio_neto + '"></td>' +
+          '<td>' +
+            '<select class="edit-inp" id="c_iva_' + p.id + '">' +
+              '<option value="true" ' + (p.iva ? 'selected' : '') + '>Sí</option>' +
+              '<option value="false" ' + (!p.iva ? 'selected' : '') + '>No</option>' +
+            '</select>' +
+          '</td>' +
+          '<td class="no-print actions">' +
+            '<button type="button" class="primary" onclick="updateProduct(' + p.id + ')">Guardar</button>' +
+            '<button type="button" class="danger" onclick="deleteProduct(' + p.id + ')">×</button>' +
+          '</td>' +
+        '</tr>';
     });
   }
 
   var el = document.getElementById('catalogRows');
-  if(el) el.innerHTML = html;
+  if (el) el.innerHTML = html;
 }
 
 async function updateProduct(id) {
-  let code = document.getElementById(`c_code_${id}`).value.trim();
-  let cat = document.getElementById(`c_cat_${id}`).value.trim();
-  let desc = document.getElementById(`c_desc_${id}`).value.trim();
-  let price = parseFloat(document.getElementById(`c_price_${id}`).value);
-  let iva = document.getElementById(`c_iva_${id}`).value === "true";
+  var code = document.getElementById('c_code_' + id).value.trim();
+  var cat = document.getElementById('c_cat_' + id).value.trim();
+  var desc = document.getElementById('c_desc_' + id).value.trim();
+  var price = parseFloat(document.getElementById('c_price_' + id).value);
+  var iva = document.getElementById('c_iva_' + id).value === "true";
 
   if (!code || !cat || !desc || isNaN(price)) return alert('Completa todos los campos.');
 
-  const { error } = await supabase.from('catalogo').update({ codigo: code, categoria: cat, descripcion: desc, precio_neto: price, iva: iva }).eq('id', id);
-  if (error) alert('Error: ' + error.message);
+  var res = await supabase.from('catalogo').update({ codigo: code, categoria: cat, descripcion: desc, precio_neto: price, iva: iva }).eq('id', id);
+  if (res.error) alert('Error: ' + res.error.message);
   else {
     alert('Producto actualizado en la nube.');
     fetchCatalogFromCloud();
@@ -494,16 +505,16 @@ async function updateProduct(id) {
 }
 
 async function addNewProduct() {
-  let code = document.getElementById('newCode').value.trim();
-  let cat = document.getElementById('newCat').value.trim();
-  let desc = document.getElementById('newDesc').value.trim();
-  let price = parseFloat(document.getElementById('newPrice').value);
-  let iva = document.getElementById('newIva').value === "true";
+  var code = document.getElementById('newCode').value.trim();
+  var cat = document.getElementById('newCat').value.trim();
+  var desc = document.getElementById('newDesc').value.trim();
+  var price = parseFloat(document.getElementById('newPrice').value);
+  var iva = document.getElementById('newIva').value === "true";
 
   if (!code || !cat || !desc || isNaN(price)) return alert('Completa todos los campos para agregar.');
 
-  const { error } = await supabase.from('catalogo').insert([{ codigo: code, categoria: cat, descripcion: desc, precio_neto: price, iva: iva }]);
-  if (error) alert('Error: ' + error.message);
+  var res = await supabase.from('catalogo').insert([{ codigo: code, categoria: cat, descripcion: desc, precio_neto: price, iva: iva }]);
+  if (res.error) alert('Error: ' + res.error.message);
   else {
     alert('Producto agregado al catálogo en la nube.');
     fetchCatalogFromCloud();
@@ -512,9 +523,9 @@ async function addNewProduct() {
 
 async function deleteProduct(id) {
   if (confirm('¿Eliminar este producto del catálogo en la nube?')) {
-    const { error } = await supabase.from('catalogo').delete().eq('id', id);
-    if (!error) fetchCatalogFromCloud();
-    else alert('Error: ' + error.message);
+    var res = await supabase.from('catalogo').delete().eq('id', id);
+    if (!res.error) fetchCatalogFromCloud();
+    else alert('Error: ' + res.error.message);
   }
 }
 </script>
